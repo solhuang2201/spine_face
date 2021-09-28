@@ -138,7 +138,7 @@
             // console.log(skeleton.bones[8].y + pX);
 
             skeleton.bones[8].x = Math.max(Math.min(skeleton.bones[8].y + pX, (boyAxisF.x + pY * 50)), (boyAxisF.x + pY * 50));
-            skeleton.bones[8].y = Math.max(Math.min(skeleton.bones[8].y + pX, (boyAxisF.y - pX * 50)), (boyAxisF.y - pX * 50));
+            skeleton.bones[8].y = Math.max(Math.min(skeleton.bones[8].x + pX, (boyAxisF.y - pX * 50)), (boyAxisF.y - pX * 50));
 
             skeleton.bones[10].x = Math.max(Math.min(skeleton.bones[10].x + pX, (boyEyeR.x + pX * 5)), (boyEyeR.x + pX * 5));
             skeleton.bones[10].y = Math.max(Math.min(skeleton.bones[10].y + pY, (boyEyeR.y + pY * 5)), (boyEyeR.y + pY * 5));
