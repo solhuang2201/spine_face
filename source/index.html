@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pixijs-spine face</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <script src="js/pixi.js"></script>
+    <script src="js/pixi-spine.umd.js"></script>
+    <script src="js/pixi-spine-debug.js"></script>
+    <script>
+        'use strict'
+        const app = new PIXI.Application({
+            antialias: true,
+            resizeTo: window,
+            autoDensity: true,
+            autoResize: true,
+            resolution: devicePixelRatio
+        });
+        document.body.appendChild(app.view);
+        // app.stop();
+
+        const scale = 0.85;
+        const target = new PIXI.Point();
+        let boy_face = null;
+        let skeleton = null;
+        let boyEyeR = {};
+        let boyEyeL = {};
+        let boyAxisF = {};
+
+        // load spine data
+        PIXI.Loader.shared
+            .add('skeleton', 'json/main_bone.json')
+            .add('skeleton_atlas_page_main_bone.png', 'json/main_bone.png')
+            .load(onAssetsLoaded);
+
+        function onAssetsLoaded(loader, res) {
+
+            boy_face = new PIXI.spine.Spine(res.skeleton.spineData);
+            skeleton = boy_face.skeleton;
+            
+            // console.log(res, skeleton);
+
+            // add the boy_basic01 to the scene and render...
+            app.stage.addChild(boy_face);
+
+            app.stage.interactive = true;
+            app.stage.buttonMode = true;
+
+            // Enable debug, Default is false
+            // boy_face.drawDebug = true;
+            // boy_face.drawBones = true;
+
+            // set the position
+            boy_face.position.set(app.screen.width * 0.5, app.screen.height * scale);
+            boy_face.scale.set(1.25);
+
+            // 檢查動畫
+            // if (boy_face.state.hasAnimation('FACE')) {
+            //     // FACE forever, little boy!
+            //     boy_face.state.setAnimation(0, 'FACE', true);
+            //     // dont FACE too fast
+            //     boy_face.state.timeScale = 1;
+            // }
+
+            // const boyNose = skeleton.bones[3]; // 鼻子
+            // const boyMouth = skeleton.bones[4]; // 嘴巴
+            // const boyHairF = skeleton.bones[5]; // 前頭髮
+            // const boyHairB = skeleton.bones[6]; // 後頭髮
+            // const boyEar = skeleton.bones[7]; // 耳朵
+            // const boyEyeR = skeleton.bones[10]; // 右眼珠
+            // const boyEyeL = skeleton.bones[13]; // 左眼珠
+            // const boyAxisF = skeleton.bones[8]; // 前軸心
+            // const boyAxisB = skeleton.bones[16]; // 後軸心
+            // 建立原始位置
+            makeBonesDATA(boyAxisF, 8, skeleton.bones);
+            makeBonesDATA(boyEyeR, 10, skeleton.bones);
+            makeBonesDATA(boyEyeL, 13, skeleton.bones);
+            // console.log(boyEyeR);
+
+            // 觸摸事件
+            app.stage.interactive = true;
+            app.stage.on('touchmove', touchHandler);
+            app.stage.on('mousemove', touchHandler);
+
+            app.start();
+        };
+
+        // Listen for window resize events
+        window.addEventListener('resize', resize);
+        function resize() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            app.renderer.resize(w, h);
+
+            // 將畫面的正中間放在 app.renderer 一半寬高的位置
+            // console.log(app.stage.children)
+            boy_face.position.set(app.screen.width * 0.5, app.screen.height * scale);
+        };
+
+        // 函數: 複製原始位置數據
+        function makeBonesDATA(buildBone,bone,skeleton) {
+            for (var item in skeleton[bone]) {
+                buildBone[item] = skeleton[bone][item];
+            }
+            return buildBone;
+        };
+
+        // 函數: 摸起來
+        function touchHandler(event) {
+            const x = event.data.global.x;
+            const y = event.data.global.y;
+
+            target.x = Math.floor(x - app.screen.width * 0.5);
+            target.y = Math.floor(y - app.screen.height * scale);
+
+            // 1 ~ -1: Math.max(Math.min($, 1.0), -1.0);
+            const pX = Math.max(Math.min((target.x - app.screen.x) / (app.screen.width * 0.5), 1.0), -1.0);
+            const pY = -Math.max(Math.min((target.y - app.screen.y) / (app.screen.height * scale), 1.0), -1.0);
+
+            // skeleton.bones[8].x = -target.y;
+            // skeleton.bones[8].y = target.x;
+            // console.log('X: ', x, app.stage.x, scale, target.x, app.screen.width * 0.5);
+            // console.log('y: ', y, app.stage.y, scale, target.y, app.screen.height * 0.85);
+            // console.log(x, y);
+            // console.log('X: ', pX);
+            // console.log('y: ', pY);
+
+            // console.log(skeleton.bones[8].y + pX);
+            skeleton.bones[8].x = Math.max(Math.min(skeleton.bones[8].y + pX, (boyAxisF.x + pY * 50)), (boyAxisF.x + pY * 50));
+            skeleton.bones[8].y = Math.max(Math.min(skeleton.bones[8].x + pX, (boyAxisF.y - pX * 50)), (boyAxisF.y - pX * 50));
+
+            skeleton.bones[10].x = Math.max(Math.min(skeleton.bones[10].x + pX, (boyEyeR.x + pX * 5)), (boyEyeR.x + pX * 5));
+            skeleton.bones[10].y = Math.max(Math.min(skeleton.bones[10].y + pY, (boyEyeR.y + pY * 5)), (boyEyeR.y + pY * 5));
+
+            skeleton.bones[13].x = Math.max(Math.min(skeleton.bones[13].x + pX, (boyEyeL.x - pX * 5)), (boyEyeL.x - pX * 5));
+            skeleton.bones[13].y = Math.max(Math.min(skeleton.bones[13].y + pY, (boyEyeL.y - pY * 5)), (boyEyeL.y - pY * 5));
+            // if (pX >= 0) {
+            //     skeleton.bones[10].x = Math.min(skeleton.bones[10].x + pX, (boyEyeR.x + pX * 5));
+            //     skeleton.bones[13].x = Math.min(skeleton.bones[13].x + pX, (boyEyeL.x - pX * 5));
+            //     skeleton.bones[8].y = Math.min(skeleton.bones[8].y + pX, (boyAxisF.y - pX * 50));
+            // } else {
+            //     skeleton.bones[10].x = Math.max(skeleton.bones[10].x + pX, (boyEyeR.x + pX * 5));
+            //     skeleton.bones[13].x = Math.max(skeleton.bones[13].x + pX, (boyEyeL.x - pX * 5));
+            //     skeleton.bones[8].y = Math.max(skeleton.bones[8].y + pX, (boyAxisF.y - pX * 50));
+            // }
+            // if (target.y >= 0) {
+            //     skeleton.bones[10].y = Math.max(skeleton.bones[10].y + pY, (boyEyeR.y + pY * 5));
+            //     skeleton.bones[13].y = Math.max(skeleton.bones[13].y + pY, (boyEyeL.y - pY * 5));
+            //     skeleton.bones[8].x = Math.max(skeleton.bones[8].x + pY, (boyAxisF.x + pY * 50));
+            // } else {
+            //     skeleton.bones[10].y = Math.min(skeleton.bones[10].y + pY, (boyEyeR.y + pY * 5));
+            //     skeleton.bones[13].y = Math.min(skeleton.bones[13].y + pY, (boyEyeL.y - pY * 5));
+            //     skeleton.bones[8].x = Math.min(skeleton.bones[8].x + pY, (boyAxisF.x + pY * 50));
+            // }
+        };
+
+    </script>
+    
+</body>
+</html>
